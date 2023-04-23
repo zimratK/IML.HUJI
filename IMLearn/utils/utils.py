@@ -34,9 +34,10 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
 
     """
     num_train = np.ceil(train_proportion * X.shape[0])
+    print("num train", num_train)
     permutation = np.random.permutation(X.shape[0])
-    X_shuffled = X.iloc[permutation]
-    y_shuffled = y.iloc[permutation]
+    X_shuffled = X.iloc[permutation].reset_index(drop=True)
+    y_shuffled = y.iloc[permutation].reset_index(drop=True)
     train_X = X_shuffled.loc[:num_train, :]
     train_y = y_shuffled.loc[:num_train]
     test_X = X_shuffled.loc[num_train:, :]
