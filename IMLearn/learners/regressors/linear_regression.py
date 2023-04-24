@@ -50,17 +50,13 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
+        if X.ndim == 1:
+            X = X.reshape((-1, 1))
         if self.include_intercept_:
             ones = np.ones((X.shape[0],1))
             X = np.hstack([X, ones])
         p_inv = np.linalg.pinv(X.T @ X)
-        # u, s, vh = np.linalg.svd(X)
-        # sigma_dagger = np.zeros((u.shape[0], vh.shape[0]))
-        # sigma_dagger[:s.shape[0], :s.shape[0]] = np.diag(1./s)
-        # x_dagger = vh.T @ sigma_dagger @ u.T
-        # self.coefs_ = x_dagger @ y
         self.coefs_ = p_inv @ X.T @ y
-        print("sdfsdgsdg", y[np.isnan(y)])
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -76,6 +72,8 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
+        if X.ndim == 1:
+            X = X.reshape((-1, 1))
         if self.include_intercept_:
             ones = np.ones((X.shape[0],1))
             X = np.hstack([X, ones])

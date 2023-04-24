@@ -18,7 +18,7 @@ def mean_square_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
     err = y_true - y_pred
     err_squared = np.square(err)
-    return np.mean(err_squared)
+    return float(np.mean(err_squared))
 
 
 def misclassification_error(y_true: np.ndarray, y_pred: np.ndarray, normalize: bool = True) -> float:
