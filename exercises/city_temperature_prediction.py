@@ -8,7 +8,6 @@ import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
 
-
 pio.templates.default = "simple_white"
 
 
@@ -27,6 +26,7 @@ def load_data(filename: str) -> pd.DataFrame:
     df = pd.read_csv(filename, parse_dates=['Date'])
     df = df[df['Temp'] > -30].dropna().drop_duplicates()
     df['DayOfYear'] = df['Date'].dt.dayofyear
+
     return df
 
 
@@ -37,71 +37,78 @@ if __name__ == '__main__':
 
     # Question 2 - Exploring data for specific country
     israel_df = df[df['Country'] == 'Israel']
+
     color_map = dict(zip(pd.Categorical(israel_df['Year']).categories, px.colors.qualitative.Plotly))
-    fig = px.scatter(israel_df, x="DayOfYear", y="Temp", color='Year', color_discrete_map=color_map)
+    fig = px.scatter(israel_df, x="DayOfYear", y="Temp", color=israel_df['Year'].astype(str),
+                     color_discrete_map=color_map)
     fig.update_layout(
         title='Temperature in israel as function of DayOfYear',
         xaxis_title="Day Of Year",
-        yaxis_title='Temperature'
+        yaxis_title='Temperature',
+        legend={
+            'title': 'Year'
+        }
     )
 
-    # fig.show()
+    fig.write_image('../../Ex2/temp_by_day.png')
 
     month_std = israel_df.groupby('Month').agg({'Temp': ['std']})
     month_std = month_std.reset_index()
-    print(month_std[('Temp', 'std')])
-    fig = px.bar(x=np.arange(12), y=month_std[('Temp', 'std')])
+    fig = px.bar(x=np.arange(1,13), y=month_std[('Temp', 'std')], text=np.array(month_std[('Temp', 'std')]).round(2))
     fig.update_layout(
         title='Standard Deviation As Function Of Month',
         xaxis_title="Month",
         yaxis_title='Temperature Standard Deviation'
     )
-    # fig.show()
-
-
-
+    fig.write_image('../../Ex2/std_by_month.png')
 
     # Question 3 - Exploring differences between countries
-    month_stats = df.groupby(['Month', 'Country']).agg({'Temp': ['std', 'mean']}).reset_index()
-    print(month_stats)
+    month_stats = df.groupby(['Month', 'Country'], as_index=False).agg(mean=("Temp", "mean"), std=("Temp", "std"))
     color_map = dict(zip(pd.Categorical(month_stats["Country"]).categories, px.colors.qualitative.Plotly))
 
-    fig = px.line(title='Mean Of Daily Temperature By Month And Country', color_discrete_map=color_map)
-    for country in month_stats['Country'].unique():
-        country_df = month_stats[month_stats['Country'] == country]
-        fig.add_trace(px.line(
-            x=np.arange(12),
-            y=country_df[('Temp', 'mean')],
-            # name=country,
-            error_y=country_df[('Temp', 'std')]
-        ).data[0])
-
-    # fig = px.line(x=np.arange(12), y=month_stats[('Temp', 'mean')], color=month_stats['Country'], error_y=month_stats['Temp', 'std'])
+    fig = px.line(month_stats, title='Mean Of Daily Temperature By Month And Country', x='Month', y='mean',
+                  error_y='std', color='Country')
     fig.update_layout(
         # title='Mean Of Daily Temperature By Month And Country ',
         xaxis_title='Month',
         yaxis_title='Mean Of Daily Temperature'
     )
-    # fig.show() #TODO add colors
+    fig.write_image('../../Ex2/by_country.png')
+
 
     # Question 4 - Fitting model for different values of `k`
     train_X, train_y, test_X, test_y = split_train_test(israel_df.drop('Temp', axis=1), israel_df["Temp"])
     loss = []
-    for k in range(1,11):
+    for k in range(1, 11):
         poly_regressor = PolynomialFitting(k)
         poly_regressor.fit(train_X["DayOfYear"].to_numpy(), train_y.to_numpy())
         loss.append(poly_regressor.loss(test_X["DayOfYear"].to_numpy(), test_y.to_numpy()))
     loss = np.array(loss).round(2)
-    print(loss)
-    fig = px.bar(x=np.arange(1,11), y=loss)
+
+    fig = px.bar(x=np.arange(1, 11), y=loss, text=loss)
     fig.update_layout(
         title='Loss As Function Of K Value (Polynom Degree)',
         xaxis_title="K",
         yaxis_title='Loss'
     )
-    fig.show()
-
-
+    fig.write_image('../../Ex2/loss_by_k.png')
 
     # Question 5 - Evaluating fitted model on different countries
-    raise NotImplementedError()
+    poly_regressor = PolynomialFitting(5)
+    poly_regressor.fit(israel_df["DayOfYear"].to_numpy(), israel_df["Temp"].to_numpy())
+    countries = df.loc[df['Country'] != 'Israel', 'Country'].unique()
+    loss = []
+    for country_name in countries:
+        country_df = df[df['Country'] == country_name]
+        country_loss = poly_regressor.loss(country_df["DayOfYear"].to_numpy(), country_df["Temp"].to_numpy())
+        loss.append(country_loss)
+    fig = px.bar(x=countries, y=loss, text=np.array(loss).round(2))
+    fig.update_layout(
+        title='Loss For Each country, k=5',
+        xaxis_title="Country Name",
+        yaxis_title='Loss'
+    )
+    fig.write_image('../../Ex2/loss_by_country.png')
+
+
+

@@ -54,9 +54,8 @@ class LinearRegression(BaseEstimator):
             X = X.reshape((-1, 1))
         if self.include_intercept_:
             ones = np.ones((X.shape[0],1))
-            X = np.hstack([X, ones])
-        p_inv = np.linalg.pinv(X.T @ X)
-        self.coefs_ = p_inv @ X.T @ y
+            X = np.hstack([ones, X])
+        self.coefs_ = pinv(X) @ y
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -76,7 +75,7 @@ class LinearRegression(BaseEstimator):
             X = X.reshape((-1, 1))
         if self.include_intercept_:
             ones = np.ones((X.shape[0],1))
-            X = np.hstack([X, ones])
+            X = np.hstack([ones, X])
         return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:

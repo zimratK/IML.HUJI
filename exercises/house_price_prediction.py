@@ -32,17 +32,44 @@ def preprocess_data(X: pd.DataFrame, y: Optional[pd.Series] = None):
     Post-processed design matrix and response vector (prices) - either as a single
     DataFrame or a Tuple[DataFrame, Series]
     """
-
-    X['date'] = pd.to_datetime(X['date'], errors='coerce')
-    X['date'].fillna(datetime.today())
-    X['year'] = X['date'].dt.year
-    X['year'].fillna(datetime.now().year)
-    X['year'] = pd.to_datetime(X['year'], errors='coerce')
-    X['year'] = (X['year'].astype('int64') // 10 ** 9).astype('int32')
-    X['date'] = (X['date'].astype('int64') // 10 ** 9).astype('int32')
-
+    X = X.drop('date', axis=1)
+    X = X.drop('id', axis=1)
     X = X.replace('nan', np.nan)
 
+    X, y = handle_zipcode(X, y)
+    X = X.apply(pd.to_numeric)
+
+    # yr_renovated - if 0, replace by value of yr_built
+    X.loc[X['yr_renovated'] == 0, 'yr_renovated'] = X.loc[X['yr_renovated'] == 0, 'yr_built']
+
+    if y is not None:
+        X, y = drop_invalid_prices(X, y)
+
+    handle_missing_data(X)
+    X['dist_from_center'] = X.apply(distance_from_center, axis=1)
+    X = X.drop('long', axis=1)
+    X = X.drop('lat', axis=1)
+
+    if y is not None:
+        return X, y
+    return X
+
+
+def handle_missing_data(X):
+    for col in X.columns:
+        if col.startswith('zipcode'):
+            continue
+        X.loc[X[col] < 0, col] = 0
+        if col not in ['sqft_basement', 'view', 'waterfront']:
+            if (X[col] <= 0).any():
+                X.loc[X[col] == 0, col] = max((avg_dict[col], 0))
+            if col.startswith('sqft'):
+                X.loc[X[col] < MIN_ROOM_SIZE, col] = MIN_ROOM_SIZE
+        if X[col].isnull().any():
+            X[col].fillna(max((avg_dict[col], 0)), inplace=True)
+
+
+def handle_zipcode(X, y):
     if y is not None:
         y = y.replace('nan', np.nan)
         global avg_dict
@@ -54,34 +81,8 @@ def preprocess_data(X: pd.DataFrame, y: Optional[pd.Series] = None):
     else:
         X = pd.get_dummies(X, columns=['zipcode'])
         X = X.reindex(columns=train_columns, fill_value=0)
-    X = X.apply(pd.to_numeric)
-    # delete the id column
-    X = X.drop('id', axis=1)
-    # yr_renovated - if 0, replace by value of yr_built
-    X.loc[X['yr_renovated'] == 0, 'yr_renovated'] = X.loc[X['yr_renovated'] == 0, 'yr_built']
+    return X, y
 
-    if y is not None:
-        X, y = drop_invalid_prices(X, y)
-
-    for col in X.columns:
-        if col.startswith('zipcode'):
-            continue
-        X.loc[X[col] < 0, col] = 0
-        if col not in ['sqft_basement', 'view', 'waterfront']:  # check if column is numeric
-            if (X[col] <= 0).any():
-                X.loc[X[col] == 0, col] = max((avg_dict[col], 0))
-            if(col.startswith('sqft')):
-                X.loc[X[col] < MIN_ROOM_SIZE, col] = MIN_ROOM_SIZE
-        if X[col].isnull().any():
-            X[col].fillna(max((avg_dict[col],0)), inplace=True)
-    X = X.drop('date', axis=1)
-    X['dist_from_center'] = X.apply(distance_from_center, axis=1)
-    X = X.drop('long', axis=1)
-    X = X.drop('lat', axis=1)
-
-    if y is not None:
-        return X,y
-    return X
 
 def distance_from_center(row):
     long_sqr = (row["long"] - avg_dict["long"]) ** 2
@@ -108,8 +109,9 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
         covariance = np.cov(X[feature], y)[0][1]  # the covariance between x and y in the cov matrix
         x_std = np.std(X[feature])
         y_std = np.std(y)
-        pearson = covariance / (x_std * y_std)
-        print(feature, covariance)
+        pearson = 0
+        if not x_std * y_std == 0:
+            pearson = covariance / (x_std * y_std)
         plot = go.Figure(
             go.Scatter(
                 x=X[feature],
@@ -118,7 +120,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
             )
         )
         plot.update_layout(
-            title='Feature: ' + feature + ', Pearson Correlation: ' + str(pearson),
+            title='Price As Function Of ' + feature + ', Pearson Correlation: ' + str(pearson),
             xaxis_title=feature,
             yaxis_title='price'
         )
@@ -147,7 +149,7 @@ def plot_distance_price(X, y):
         xaxis_title="distance",
         yaxis_title='price'
     )
-    plot.show()
+    plot.write_image('../../Ex2/price_distance_correlation.png')
 
 
 if __name__ == '__main__':
@@ -162,13 +164,9 @@ if __name__ == '__main__':
     # Question 2 - Preprocessing of housing prices dataset
     prep_train, prep_labels = preprocess_data(train_X, train_y)
     prep_test = preprocess_data(test_X)
-    #######try######TODO delete
-    regressor = LinearRegression()
-    regressor.fit(prep_train.to_numpy(), prep_labels.to_numpy())
-    prep_test, test_y = drop_invalid_prices(prep_test, test_y)
-    print(regressor.loss(prep_test.to_numpy(), test_y.to_numpy()))
+
     # Question 3 - Feature evaluation with respect to response
-    # feature_evaluation(prep_train, prep_labels, '../../Ex2/pearson_results') #TODO
+    feature_evaluation(prep_train, prep_labels, '../../Ex2/pearson_results')
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -184,20 +182,22 @@ if __name__ == '__main__':
     for p in range(10, 101):
         fraction = p / 100
         concat_df = pd.concat([prep_train, prep_labels], axis=1)
-        loss = []
-
-        for i in range(10):
+        loss_arr = []
+        i = 0
+        while i < 10:
+            regressor = LinearRegression()
             sampled_df = concat_df.sample(frac=fraction)
             sampled_features = sampled_df.drop('price', axis=1)
             sampled_labels = sampled_df['price']
             regressor.fit(sampled_features.to_numpy(), sampled_labels.to_numpy())
-            loss.append(regressor.loss(prep_test.to_numpy(), test_y.to_numpy()))
-
-        means.append(np.array(loss).mean())
-        stds.append(np.array(loss).std())
+            current_loss = regressor.loss(prep_test.to_numpy(), test_y.to_numpy())
+            if current_loss < 1e11:
+                i = i+1
+                loss_arr.append(current_loss)
+        means.append(np.array(loss_arr).mean())
+        stds.append(np.array(loss_arr).std())
     means = np.array(means)
     stds = np.array(stds)
-    print(stds)
 
     plot = go.Figure(
         [go.Scatter(
@@ -218,4 +218,5 @@ if __name__ == '__main__':
         yaxis_title='mean of loss'
     )
 
-    plot.show()
+    plot.write_image('../../Ex2/loss_by_percentage.png')
+
