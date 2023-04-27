@@ -50,20 +50,22 @@ if __name__ == '__main__':
         }
     )
 
-    fig.write_image('../../Ex2/temp_by_day.png')
+    fig.write_image('./temp_by_day.png')
 
     month_std = israel_df.groupby('Month').agg({'Temp': ['std']})
     month_std = month_std.reset_index()
-    fig = px.bar(x=np.arange(1,13), y=month_std[('Temp', 'std')], text=np.array(month_std[('Temp', 'std')]).round(2))
+    fig = px.bar(x=np.arange(1, 13), y=month_std[('Temp', 'std')],
+                 text=np.array(month_std[('Temp', 'std')]).round(2))
     fig.update_layout(
         title='Standard Deviation As Function Of Month',
         xaxis_title="Month",
         yaxis_title='Temperature Standard Deviation'
     )
-    fig.write_image('../../Ex2/std_by_month.png')
+    fig.write_image('./std_by_month.png')
 
     # Question 3 - Exploring differences between countries
-    month_stats = df.groupby(['Month', 'Country'], as_index=False).agg(mean=("Temp", "mean"), std=("Temp", "std"))
+    month_stats = df.groupby(['Month', 'Country'], as_index=False).agg(mean=("Temp", "mean"),
+                                                                       std=("Temp", "std"))
     color_map = dict(zip(pd.Categorical(month_stats["Country"]).categories, px.colors.qualitative.Plotly))
 
     fig = px.line(month_stats, title='Mean Of Daily Temperature By Month And Country', x='Month', y='mean',
@@ -73,8 +75,7 @@ if __name__ == '__main__':
         xaxis_title='Month',
         yaxis_title='Mean Of Daily Temperature'
     )
-    fig.write_image('../../Ex2/by_country.png')
-
+    fig.write_image('./by_country.png')
 
     # Question 4 - Fitting model for different values of `k`
     train_X, train_y, test_X, test_y = split_train_test(israel_df.drop('Temp', axis=1), israel_df["Temp"])
@@ -82,7 +83,9 @@ if __name__ == '__main__':
     for k in range(1, 11):
         poly_regressor = PolynomialFitting(k)
         poly_regressor.fit(train_X["DayOfYear"].to_numpy(), train_y.to_numpy())
-        loss.append(poly_regressor.loss(test_X["DayOfYear"].to_numpy(), test_y.to_numpy()))
+        current_loss = round(poly_regressor.loss(test_X["DayOfYear"].to_numpy(), test_y.to_numpy()), 2)
+        loss.append(current_loss)
+        print("loss for k=" + str(k) + ": " + str(current_loss))
     loss = np.array(loss).round(2)
 
     fig = px.bar(x=np.arange(1, 11), y=loss, text=loss)
@@ -91,7 +94,7 @@ if __name__ == '__main__':
         xaxis_title="K",
         yaxis_title='Loss'
     )
-    fig.write_image('../../Ex2/loss_by_k.png')
+    fig.write_image('./loss_by_k.png')
 
     # Question 5 - Evaluating fitted model on different countries
     poly_regressor = PolynomialFitting(5)
@@ -108,7 +111,6 @@ if __name__ == '__main__':
         xaxis_title="Country Name",
         yaxis_title='Loss'
     )
-    fig.write_image('../../Ex2/loss_by_country.png')
+    fig.write_image('.loss_by_country.png')
 
-
-
+    # TODO replace all paths

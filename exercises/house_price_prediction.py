@@ -51,6 +51,10 @@ def preprocess_data(X: pd.DataFrame, y: Optional[pd.Series] = None):
     X = X.drop('lat', axis=1)
 
     if y is not None:
+        concat_df = pd.concat([X, y], axis=1)
+        concat_df = concat_df.drop_duplicates()
+        X = concat_df.drop("price", axis=1)
+        y = concat_df["price"]
         return X, y
     return X
 
@@ -149,7 +153,7 @@ def plot_distance_price(X, y):
         xaxis_title="distance",
         yaxis_title='price'
     )
-    plot.write_image('../../Ex2/price_distance_correlation.png')
+    plot.write_image('./price_distance_correlation.png')
 
 
 if __name__ == '__main__':
@@ -166,7 +170,7 @@ if __name__ == '__main__':
     prep_test = preprocess_data(test_X)
 
     # Question 3 - Feature evaluation with respect to response
-    feature_evaluation(prep_train, prep_labels, '../../Ex2/pearson_results')
+    feature_evaluation(prep_train, prep_labels, '.Ex2/pearson_results')
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -192,7 +196,7 @@ if __name__ == '__main__':
             regressor.fit(sampled_features.to_numpy(), sampled_labels.to_numpy())
             current_loss = regressor.loss(prep_test.to_numpy(), test_y.to_numpy())
             if current_loss < 1e11:
-                i = i+1
+                i = i + 1
                 loss_arr.append(current_loss)
         means.append(np.array(loss_arr).mean())
         stds.append(np.array(loss_arr).std())
@@ -218,5 +222,6 @@ if __name__ == '__main__':
         yaxis_title='mean of loss'
     )
 
-    plot.write_image('../../Ex2/loss_by_percentage.png')
+    plot.write_image('.loss_by_percentage.png')
 
+    # TODO replace all paths
