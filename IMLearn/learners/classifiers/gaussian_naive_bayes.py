@@ -2,10 +2,12 @@ from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
 
+
 class GaussianNaiveBayes(BaseEstimator):
     """
     Gaussian Naive-Bayes classifier
     """
+
     def __init__(self):
         """
         Instantiate a Gaussian Naive Bayes classifier
@@ -48,14 +50,13 @@ class GaussianNaiveBayes(BaseEstimator):
             n_k = np.sum(class_arr)
             mu_k = X.T @ class_arr / n_k
             mu.append(mu_k)
-            x_minus_mu_sqr = (X-mu_k)**2
+            x_minus_mu_sqr = (X - mu_k) ** 2
             sigma_k = x_minus_mu_sqr.T @ class_arr / n_k
             sigma.append(sigma_k)
             pi_mle.append(n_k / X.shape[0])
         self.mu_ = np.array(mu)
         self.vars_ = np.array(sigma)
         self.pi_ = np.array(pi_mle)
-        print(self.vars_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -95,14 +96,13 @@ class GaussianNaiveBayes(BaseEstimator):
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
         likelihoods = []
         for k in range(len(self.classes_)):
-            z=1/np.sqrt(2*np.pi*self.vars_[k])
-            exp_factor =(X-self.mu_[k])**2/(-2*self.vars_[k])
-            likelihood_matrix = z*np.exp(exp_factor)
-            result_for_class = np.prod(likelihood_matrix, axis=1)*self.pi_[k]
+            z = 1 / np.sqrt(2 * np.pi * self.vars_[k])
+            exp_factor = (X - self.mu_[k]) ** 2 / (-2 * self.vars_[k])
+            likelihood_matrix = z * np.exp(exp_factor)
+            result_for_class = np.prod(likelihood_matrix, axis=1) * self.pi_[k]
             likelihoods.append(result_for_class)
 
         return np.array((likelihoods)).T
-
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

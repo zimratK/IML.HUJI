@@ -88,12 +88,12 @@ class Perceptron(BaseEstimator):
         self.fitted_ = True
         if self.include_intercept_:
             ones = np.ones((X.shape[0],1))
-            X = np.hstack([ones, X]) #TODO order?
+            X = np.hstack([ones, X])
             self.coefs_ = np.zeros((X.shape[1],))
         misclassified = self._get_misclassified_sample(X, y)
         iterations = 0
-        while misclassified is not None and iterations < self.max_iter_: #TODO < or <=?
-            self.callback_(self, misclassified[1], misclassified[0])  # TODO what?
+        while misclassified is not None and iterations < self.max_iter_:
+            self.callback_(self, misclassified[1], misclassified[0])
             self.coefs_ = self.coefs_ + misclassified[0]*misclassified[1]
             misclassified = self._get_misclassified_sample(X, y)
             iterations += 1
@@ -117,7 +117,7 @@ class Perceptron(BaseEstimator):
         """
         if self.include_intercept_:
             ones = np.ones((X.shape[0],1))
-            X = np.hstack([ones, X]) #TODO order?
+            X = np.hstack([ones, X])
         distance = self.coefs_ @ X.T
         return np.sign(distance).astype(int) + (distance == 0)
 
@@ -141,4 +141,4 @@ class Perceptron(BaseEstimator):
         """
         from ...metrics import misclassification_error
         response = self._predict(X)
-        return misclassification_error(y, response) #TODO should normalize?
+        return misclassification_error(y, response)

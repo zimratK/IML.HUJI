@@ -64,8 +64,8 @@ class LDA(BaseEstimator):
             vec = X[i] - mu[y[i]]
             vec = vec.reshape((vec.shape[0], 1))
             cov += vec @ vec.T
-        self.cov_ = cov / (X.shape[0] - len(self.classes_))  # TODO unbiased??
-        self._cov_inv = np.linalg.inv(self.cov_)
+        self.cov_ = cov / (X.shape[0] - len(self.classes_))
+        self._cov_inv = inv(self.cov_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -81,13 +81,9 @@ class LDA(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        probs = []
-        for k in self.classes_:
-            a_k = self._cov_inv @ self.mu_[k]
-            b_k = np.log(self.pi_[k]) - 0.5 * self.mu_[k] @ self._cov_inv @ self.mu_[k]
-            probs.append(a_k.T @ X.T + b_k)
-
-        return self.classes_[np.argmax(np.array(probs), axis=0)]
+        likelihoods = self.likelihood(X)
+        max_likelihoods = np.argmax(likelihoods, axis=1)
+        return self.classes_[max_likelihoods]
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -106,13 +102,14 @@ class LDA(BaseEstimator):
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
-        # y = self.predict(X)
-        # likelihood = np.ones()
-        # for i in range(X.shape[0]):
-        #     pdf = np.exp(-(X[i] - self.mu_[y[i]]).T @ self._cov_inv @ (X[i] - self.mu_[y[i]]) / 2) / np.sqrt(
-        #         (2 * np.pi) * X.shape[1] * np.linalg.det(self.cov_))
-        #     likelihood *= pdf*self.pi_[y[i]]
-        # return
+        likelihoods = []
+        z = 1 / np.sqrt((2 * np.pi) ** X.shape[1] * np.linalg.det(self.cov_))
+        for k in range(len(self.classes_)):
+            matrix_to_transpose = X - self.mu_[k]
+            exp_factor = np.sum(matrix_to_transpose @ self._cov_inv * matrix_to_transpose, axis=1) / -2
+            likelihood_matrix = np.exp(exp_factor)
+            likelihoods.append(z * likelihood_matrix * self.pi_[k])
+        return np.array(likelihoods).T
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -133,4 +130,4 @@ class LDA(BaseEstimator):
         """
         from ...metrics import misclassification_error
         response = self._predict(X)
-        return misclassification_error(y, response)  # TODO should normalize?
+        return misclassification_error(y, response)

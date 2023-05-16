@@ -63,6 +63,7 @@ def run_perceptron():
             xaxis_title='iteration',
             yaxis_title='loss'
         )
+        plot.update_xaxes(range=[0, len(losses)])
         plot.show()
         plot.write_image('../../Ex3/loss_by_iterations_' + n + '.png')
 
@@ -106,56 +107,51 @@ def compare_gaussian_classifiers():
         lda.fit(X, y)
         lda_res_y = lda.predict(X)
 
-        gna = GaussianNaiveBayes()
-        gna.fit(X, y)
-        gna_res_y = gna.predict(X)
+        gnb = GaussianNaiveBayes()
+        gnb.fit(X, y)
+        gnb_res_y = gnb.predict(X)
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
-        # Create subplots
         from IMLearn.metrics import accuracy
-        shapes = ['circle', 'square', 'triangle-up']  # circle and square
-        colors = ['blue', 'red', 'yellow']
-        fig = make_subplots(rows=1, cols=2, subplot_titles=("Plot 1", "Plot 2"))
 
-        # Update the layout
-        fig.update_layout(width=800, height=400, title='Two plots side by side')
-        # create plot
-        for i in range(len(lda.classes_)):
-            for j in range(len(lda.classes_)):
-                mask = (lda_res_y == i) & (y == j)
-                print(mask)
-                fig.add_trace(go.Scatter(x=X[mask, 0], y=X[mask, 1], mode='markers',
-                                         marker=dict(symbol=shapes[j], color=colors[i])), row=1, col=1)
+        fig = make_subplots(rows=1, cols=2,
+                            subplot_titles=("LDA results - accuracy=" + str(round(accuracy(y, lda_res_y), 3)),
+                                            "Gaussian Naive Bayes results - accuracy=" + str(
+                                                round(accuracy(y, gnb_res_y), 3))))
+
+        fig.update_layout(width=1000, height=500, title='Classifiers Results For Dataset ' + f.split(".")[0])
+        # Add traces for data-points setting symbols and colors
+        scatter_classifier_results(X, fig, lda, lda_res_y, y, 1)
+        scatter_classifier_results(X, fig, gnb, gnb_res_y, y, 2)
+
+        # Add `X` dots specifying fitted Gaussians' means
+        # Add ellipses depicting the covariances of the fitted Gaussians
 
         for i in range(len(lda.classes_)):
             marker = go.scatter.Marker(symbol='x', color='black', size=12)
             fig.add_trace(go.Scatter(x=[lda.mu_[i, 0]], y=[lda.mu_[i, 1]], marker=marker), row=1, col=1)
             fig.add_trace(get_ellipse(lda.mu_[i], lda.cov_), row=1, col=1)
 
-        for i in range(len(gna.classes_)):
-            for j in range(len(gna.classes_)):
-                mask = (gna_res_y == i) & (y == j)
-                print(mask)
-                fig.add_trace(go.Scatter(x=X[mask, 0], y=X[mask, 1], mode='markers',
-                                         marker=dict(symbol=shapes[j], color=colors[i])), row=1, col=2)
-
-        for i in range(len(gna.classes_)):
+        for i in range(len(gnb.classes_)):
             marker = go.scatter.Marker(symbol='x', color='black', size=12)
-            fig.add_trace(go.Scatter(x=[lda.mu_[i, 0]], y=[lda.mu_[i, 1]], marker=marker), row=1, col=2)
-            fig.add_trace(get_ellipse(gna.mu_[i], np.diag(gna.vars_[i])), row=1, col=2)
+            fig.add_trace(go.Scatter(x=[gnb.mu_[i, 0]], y=[gnb.mu_[i, 1]], marker=marker), row=1, col=2)
+            fig.add_trace(get_ellipse(gnb.mu_[i], np.diag(gnb.vars_[i])), row=1, col=2)
         fig.update_layout(showlegend=False)
-        fig.write_image("../../Ex3/scatter_plot.png")
+        fig.update_yaxes(scaleanchor="x", scaleratio=1)
 
-        # Add traces for data-points setting symbols and colors
-        raise NotImplementedError()
+        fig.write_image("../../Ex3/scatter_plot_" + f.split('.')[0] + ".png")
 
-        # Add `X` dots specifying fitted Gaussians' means
-        raise NotImplementedError()
 
-        # Add ellipses depicting the covariances of the fitted Gaussians
-        raise NotImplementedError()
+def scatter_classifier_results(X, fig, classifier, pred_y, true_y, column):
+    shapes = ['circle', 'square', 'triangle-up']  # circle and square
+    colors = ['blue', 'red', 'yellow']
+    for i in range(len(classifier.classes_)):
+        for j in range(len(classifier.classes_)):
+            mask = (pred_y == i) & (true_y == j)
+            fig.add_trace(go.Scatter(x=X[mask, 0], y=X[mask, 1], mode='markers',
+                                     marker=dict(symbol=shapes[j], color=colors[i])), row=1, col=column)
 
-# TODO unbiased!!!
+
 if __name__ == '__main__':
     np.random.seed(0)
     # run_perceptron()
