@@ -29,8 +29,10 @@ class Perceptron(BaseEstimator):
 
     callback_: Callable[[Perceptron, np.ndarray, int], None]
             A callable to be called after each update of the model while fitting to given data
-            Callable function should receive as input a Perceptron instance, current sample and current response
+            Callable function should receive as input a Perceptron instance, current sample and current
+            response
     """
+
     def __init__(self,
                  include_intercept: bool = True,
                  max_iter: int = 1000,
@@ -48,7 +50,8 @@ class Perceptron(BaseEstimator):
 
         callback: Callable[[Perceptron, np.ndarray, int], None]
             A callable to be called after each update of the model while fitting to given data
-            Callable function should receive as input a Perceptron instance, current sample and current response
+            Callable function should receive as input a Perceptron instance, current sample and current
+             response
         """
         super().__init__()
         self.include_intercept_ = include_intercept
@@ -57,20 +60,15 @@ class Perceptron(BaseEstimator):
         self.coefs_ = None
 
     def _get_misclassified_sample(self, X: np.ndarray, y: np.ndarray):
-        if self.include_intercept_:
-            X_to_pred = X[:,1:]
-        else:
-            X_to_pred = X
-        response = self._predict(X_to_pred)
-        for i, label in enumerate(response):
-            if label != y[i]:
-                return y[i],X[i]
+        for i in range(X.shape[0]):
+            if y[i] * (X[i] @ self.coefs_) <= 0:
+                return y[i], X[i]
         return None
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
-        Fit a halfspace to to given samples. Iterate over given data as long as there exists a sample misclassified
-        or that did not reach `self.max_iter_`
+        Fit a halfspace to to given samples. Iterate over given data as long as there exists a sample
+         misclassified or that did not reach `self.max_iter_`
 
         Parameters
         ----------
@@ -87,19 +85,17 @@ class Perceptron(BaseEstimator):
         self.coefs_ = np.zeros((X.shape[1],))
         self.fitted_ = True
         if self.include_intercept_:
-            ones = np.ones((X.shape[0],1))
+            ones = np.ones((X.shape[0], 1))
             X = np.hstack([ones, X])
             self.coefs_ = np.zeros((X.shape[1],))
         misclassified = self._get_misclassified_sample(X, y)
         iterations = 0
         while misclassified is not None and iterations < self.max_iter_:
+            self.coefs_ = self.coefs_ + misclassified[0] * misclassified[1]
             self.callback_(self, misclassified[1], misclassified[0])
-            self.coefs_ = self.coefs_ + misclassified[0]*misclassified[1]
             misclassified = self._get_misclassified_sample(X, y)
             iterations += 1
         self.callback_(self, None, None)
-
-
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -116,11 +112,10 @@ class Perceptron(BaseEstimator):
             Predicted responses of given samples
         """
         if self.include_intercept_:
-            ones = np.ones((X.shape[0],1))
+            ones = np.ones((X.shape[0], 1))
             X = np.hstack([ones, X])
         distance = self.coefs_ @ X.T
         return np.sign(distance).astype(int) + (distance == 0)
-
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

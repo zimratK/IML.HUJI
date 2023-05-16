@@ -102,7 +102,7 @@ class GaussianNaiveBayes(BaseEstimator):
             result_for_class = np.prod(likelihood_matrix, axis=1) * self.pi_[k]
             likelihoods.append(result_for_class)
 
-        return np.array((likelihoods)).T
+        return np.array(likelihoods).T
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

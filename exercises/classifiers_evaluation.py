@@ -9,7 +9,8 @@ from math import atan2, pi
 def load_dataset(filename: str) -> Tuple[np.ndarray, np.ndarray]:
     """
     Load dataset for comparing the Gaussian Naive Bayes and LDA classifiers. File is assumed to be an
-    ndarray of shape (n_samples, 3) where the first 2 columns represent features and the third column the class
+    ndarray of shape (n_samples, 3) where the first 2 columns represent features and the third column the
+    class
 
     Parameters
     ----------
@@ -31,7 +32,8 @@ def load_dataset(filename: str) -> Tuple[np.ndarray, np.ndarray]:
 
 def run_perceptron():
     """
-    Fit and plot fit progression of the Perceptron algorithm over both the linearly separable and inseparable datasets
+    Fit and plot fit progression of the Perceptron algorithm over both the linearly separable and inseparable
+     datasets
 
     Create a line plot that shows the perceptron algorithm's training loss values (y-axis)
     as a function of the training iterations (x-axis).
@@ -59,12 +61,11 @@ def run_perceptron():
             )
         )
         plot.update_layout(
-            title='Loss For Each Iteration',
-            xaxis_title='iteration',
-            yaxis_title='loss'
+            title='Perceptron Misclassification Error, Dataset: ' + n,
+            xaxis_title='Iteration',
+            yaxis_title='Misclassification Error'
         )
         plot.update_xaxes(range=[0, len(losses)])
-        plot.show()
         plot.write_image('../../Ex3/loss_by_iterations_' + n + '.png')
 
 
@@ -115,27 +116,28 @@ def compare_gaussian_classifiers():
         from IMLearn.metrics import accuracy
 
         fig = make_subplots(rows=1, cols=2,
-                            subplot_titles=("LDA results - accuracy=" + str(round(accuracy(y, lda_res_y), 3)),
-                                            "Gaussian Naive Bayes results - accuracy=" + str(
-                                                round(accuracy(y, gnb_res_y), 3))))
+                            subplot_titles=(
+                                "Gaussian Naive Bayes results - accuracy=" + str(
+                                    round(accuracy(y, gnb_res_y), 3)),
+                                "LDA results - accuracy=" + str(round(accuracy(y, lda_res_y), 3))))
 
         fig.update_layout(width=1000, height=500, title='Classifiers Results For Dataset ' + f.split(".")[0])
         # Add traces for data-points setting symbols and colors
-        scatter_classifier_results(X, fig, lda, lda_res_y, y, 1)
-        scatter_classifier_results(X, fig, gnb, gnb_res_y, y, 2)
+        scatter_classifier_results(X, fig, lda, lda_res_y, y, 2)
+        scatter_classifier_results(X, fig, gnb, gnb_res_y, y, 1)
 
         # Add `X` dots specifying fitted Gaussians' means
         # Add ellipses depicting the covariances of the fitted Gaussians
 
         for i in range(len(lda.classes_)):
             marker = go.scatter.Marker(symbol='x', color='black', size=12)
-            fig.add_trace(go.Scatter(x=[lda.mu_[i, 0]], y=[lda.mu_[i, 1]], marker=marker), row=1, col=1)
-            fig.add_trace(get_ellipse(lda.mu_[i], lda.cov_), row=1, col=1)
+            fig.add_trace(go.Scatter(x=[lda.mu_[i, 0]], y=[lda.mu_[i, 1]], marker=marker), row=1, col=2)
+            fig.add_trace(get_ellipse(lda.mu_[i], lda.cov_), row=1, col=2)
 
         for i in range(len(gnb.classes_)):
             marker = go.scatter.Marker(symbol='x', color='black', size=12)
-            fig.add_trace(go.Scatter(x=[gnb.mu_[i, 0]], y=[gnb.mu_[i, 1]], marker=marker), row=1, col=2)
-            fig.add_trace(get_ellipse(gnb.mu_[i], np.diag(gnb.vars_[i])), row=1, col=2)
+            fig.add_trace(go.Scatter(x=[gnb.mu_[i, 0]], y=[gnb.mu_[i, 1]], marker=marker), row=1, col=1)
+            fig.add_trace(get_ellipse(gnb.mu_[i], np.diag(gnb.vars_[i])), row=1, col=1)
         fig.update_layout(showlegend=False)
         fig.update_yaxes(scaleanchor="x", scaleratio=1)
 
@@ -143,7 +145,7 @@ def compare_gaussian_classifiers():
 
 
 def scatter_classifier_results(X, fig, classifier, pred_y, true_y, column):
-    shapes = ['circle', 'square', 'triangle-up']  # circle and square
+    shapes = ['circle', 'square', 'triangle-up']
     colors = ['blue', 'red', 'yellow']
     for i in range(len(classifier.classes_)):
         for j in range(len(classifier.classes_)):
@@ -152,7 +154,9 @@ def scatter_classifier_results(X, fig, classifier, pred_y, true_y, column):
                                      marker=dict(symbol=shapes[j], color=colors[i])), row=1, col=column)
 
 
+# TODO paths
+
 if __name__ == '__main__':
     np.random.seed(0)
-    # run_perceptron()
+    run_perceptron()
     compare_gaussian_classifiers()
