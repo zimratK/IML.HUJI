@@ -66,7 +66,7 @@ def run_perceptron():
             yaxis_title='Misclassification Error'
         )
         plot.update_xaxes(range=[0, len(losses)])
-        plot.write_image('../../Ex3/loss_by_iterations_' + n + '.png')
+        plot.show()
 
 
 def get_ellipse(mu: np.ndarray, cov: np.ndarray):
@@ -141,7 +141,7 @@ def compare_gaussian_classifiers():
         fig.update_layout(showlegend=False)
         fig.update_yaxes(scaleanchor="x", scaleratio=1)
 
-        fig.write_image("../../Ex3/scatter_plot_" + f.split('.')[0] + ".png")
+        fig.show()
 
 
 def scatter_classifier_results(X, fig, classifier, pred_y, true_y, column):
@@ -154,7 +154,6 @@ def scatter_classifier_results(X, fig, classifier, pred_y, true_y, column):
                                      marker=dict(symbol=shapes[j], color=colors[i])), row=1, col=column)
 
 
-# TODO paths
 
 if __name__ == '__main__':
     np.random.seed(0)

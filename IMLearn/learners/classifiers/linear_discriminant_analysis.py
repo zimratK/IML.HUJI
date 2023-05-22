@@ -61,7 +61,8 @@ class LDA(BaseEstimator):
 
         cov = np.zeros((X.shape[1], X.shape[1]))
         for i in range(X.shape[0]):
-            vec = X[i] - mu[y[i]]
+            class_index = np.where(self.classes_ == y[i])[0][0]
+            vec = X[i] - mu[class_index]
             vec = vec.reshape((vec.shape[0], 1))
             cov += vec @ vec.T
         self.cov_ = cov / (X.shape[0] - len(self.classes_))
