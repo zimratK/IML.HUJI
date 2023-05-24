@@ -113,8 +113,11 @@ class DecisionStump(BaseEstimator):
             try_threshold = values[i]
             over_threshold = values >= try_threshold
             neg_labeled = labels == -sign
-            missclassified = over_threshold & neg_labeled
-            risk = np.sum(missclassified)
+            missclassified1 = over_threshold & neg_labeled
+            under_threshold = values < try_threshold
+            pos_labeled = labels == sign
+            missclassified2 = under_threshold & pos_labeled
+            risk = np.sum(missclassified1)+np.sum(missclassified2)
             risks.append(risk)
         index = np.argmin(np.array(risks))
         return values[index], risks[index]/len(values)
