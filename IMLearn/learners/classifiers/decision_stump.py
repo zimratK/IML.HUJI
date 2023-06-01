@@ -42,12 +42,17 @@ class DecisionStump(BaseEstimator):
         """
         risks = []
         for j in range(X.shape[1]):
-            threshold_result = self._find_threshold(X[:,j], y, self.sign_)
-            risks.append(threshold_result)
+            threshold_sign_pos, error_sign_pos = self._find_threshold(X[:, j], y, 1)
+            threshold_sign_neg, error_sign_neg = self._find_threshold(X[:, j], y, -1)
+            if error_sign_pos > error_sign_neg:
+                risks.append([threshold_sign_neg, error_sign_neg, -1])
+            else:
+                risks.append([threshold_sign_pos, error_sign_pos, 1])
         risks = np.array(risks)
-        index = np.argmin(risks[:,1])
+        index = np.argmin(risks[:, 1])
         self.j_ = index
         self.threshold_ = risks[index][0]
+        self.sign_ = risks[index][2]
         self.fitted_ = True
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
@@ -72,7 +77,7 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        mask = X[:, self.j_] > self.threshold_
+        mask = X[:, self.j_] >= self.threshold_
         response = np.zeros((X.shape[0],))
         response[mask] = self.sign_
         response[~mask] = -self.sign_
@@ -108,19 +113,36 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        risks = []
-        for i in range(len(values)):
-            try_threshold = values[i]
-            over_threshold = values >= try_threshold
-            neg_labeled = labels == -sign
-            missclassified1 = over_threshold & neg_labeled
-            under_threshold = values < try_threshold
-            pos_labeled = labels == sign
-            missclassified2 = under_threshold & pos_labeled
-            risk = np.sum(missclassified1)+np.sum(missclassified2)
-            risks.append(risk)
+        sorted_ids = np.argsort(values)
+        sorted_labels = labels[sorted_ids]
+        sorted_values = values[sorted_ids]
+        risks = [np.sum(np.abs(np.ones_like(sorted_labels) * sign - sorted_labels))]
+        for i, threshold in enumerate(sorted_values):
+            risks.append(risks[-1] - np.abs(sign - sorted_labels[i]) + np.abs(-sign - sorted_labels[i]))
         index = np.argmin(np.array(risks))
-        return values[index], risks[index]/len(values)
+        print(index)
+        if index == 0:
+            return -np.inf, risks[index]
+        if index == len(risks) - 1:
+            return np.inf, risks[index]
+        return sorted_values[index-1], risks[index]
+
+
+
+
+
+
+        ids = np.argsort(values)
+        values, labels = values[ids], labels[ids]
+
+        # Loss for classifying all as `sign` - namely, if threshold is smaller than values[0]
+        loss = np.sum(np.abs(labels)[np.sign(labels) == sign])
+
+        # Loss of classifying threshold being each of the values given
+        loss = np.append(loss, loss - np.cumsum(labels * sign))
+
+        id = np.argmin(loss)
+        return np.concatenate([[-np.inf], values[1:], [np.inf]])[id], loss[id]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

@@ -67,7 +67,6 @@ def decision_surface(predict, xrange, yrange, density=120, dotted=False, colorsc
     xrange, yrange = np.linspace(*xrange, density), np.linspace(*yrange, density)
     xx, yy = np.meshgrid(xrange, yrange)
     pred = predict(np.c_[xx.ravel(), yy.ravel()])
-
     if dotted:
         return go.Scatter(x=xx.ravel(), y=yy.ravel(), opacity=1, mode="markers", marker=dict(color=pred, size=1, colorscale=colorscale, reversescale=False), hoverinfo="skip", showlegend=False)
     return go.Contour(x=xrange, y=yrange, z=pred.reshape(xx.shape), colorscale=colorscale, reversescale=False, opacity=.7, connectgaps=True, hoverinfo="skip", showlegend=False, showscale=showscale)
