@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Tuple, NoReturn
 from ...base import BaseEstimator
 import numpy as np
-from itertools import product
 
 
 class DecisionStump(BaseEstimator):
@@ -116,33 +115,16 @@ class DecisionStump(BaseEstimator):
         sorted_ids = np.argsort(values)
         sorted_labels = labels[sorted_ids]
         sorted_values = values[sorted_ids]
-        risks = [np.sum(np.abs(np.ones_like(sorted_labels) * sign - sorted_labels))]
+        risks = [np.sum(sorted_labels*(np.sign(sorted_labels)-sign)/2)]
         for i, threshold in enumerate(sorted_values):
-            risks.append(risks[-1] - np.abs(sign - sorted_labels[i]) + np.abs(-sign - sorted_labels[i]))
+            risks.append(risks[-1] + sign * sorted_labels[i])
         index = np.argmin(np.array(risks))
-        print(index)
+
         if index == 0:
             return -np.inf, risks[index]
         if index == len(risks) - 1:
             return np.inf, risks[index]
-        return sorted_values[index-1], risks[index]
-
-
-
-
-
-
-        ids = np.argsort(values)
-        values, labels = values[ids], labels[ids]
-
-        # Loss for classifying all as `sign` - namely, if threshold is smaller than values[0]
-        loss = np.sum(np.abs(labels)[np.sign(labels) == sign])
-
-        # Loss of classifying threshold being each of the values given
-        loss = np.append(loss, loss - np.cumsum(labels * sign))
-
-        id = np.argmin(loss)
-        return np.concatenate([[-np.inf], values[1:], [np.inf]])[id], loss[id]
+        return sorted_values[index], risks[index]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

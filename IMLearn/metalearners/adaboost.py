@@ -1,5 +1,5 @@
 import numpy as np
-from ..base import BaseEstimator #TODO ???
+from ..base import BaseEstimator
 from typing import Callable, NoReturn
 
 
@@ -60,8 +60,9 @@ class AdaBoost(BaseEstimator):
             epsilon = D @ missclassified
             weights_to_append = np.log((1 - epsilon) / epsilon) / 2
             self.weights_.append(weights_to_append)
-            D = D * np.exp(-y * weights_to_append * response)
-            D = D / np.sum(D)
+            if epsilon != 0:
+                D = D * np.exp(-y * weights_to_append * response)
+                D = D / np.sum(D)
         self.D_ = D
 
     def _predict(self, X):
@@ -141,6 +142,6 @@ class AdaBoost(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        from ..metrics import misclassification_error  # TODO is import ok?
+        from ..metrics import misclassification_error
         response = self.partial_predict(X, T)
         return misclassification_error(y, response)

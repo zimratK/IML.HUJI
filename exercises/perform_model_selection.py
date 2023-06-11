@@ -46,27 +46,21 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     n_samples: int, default=50
         Number of samples to generate
 
-    n_evaluations: int, default = 500 #TODO!!
+    n_evaluations: int, default = 500
         Number of regularization parameter values to evaluate for each of the algorithms
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
-    X, y = datasets.load_diabetes(return_X_y=True
-                                  # , as_frame=True
-                                  )
-    train_X = X[:n_samples, :]
-    test_X = X[n_samples:, :]
-    train_y = y[:n_samples]
-    test_y = y[n_samples:]
+    X, y = datasets.load_diabetes(return_X_y=True, as_frame=True)
 
-    # TODO random
-    # train_proportion = n_samples / X.shape[0]
-    # train_X, train_y, test_X, test_y = split_train_test(X, y, train_proportion)
-    # train_X, train_y, test_X, test_y = np.array(train_X), np.array(train_y), np.array(test_X), np.array(
-    #     test_y)
+    train_proportion = n_samples / X.shape[0]
+    train_X, train_y, test_X, test_y = split_train_test(X, y, train_proportion)
+    train_X, train_y, test_X, test_y = np.array(train_X), np.array(train_y), np.array(test_X), np.array(
+        test_y)
 
-    # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
-    lambda_range_for_lasso = np.linspace(pow(10, -2), 2, n_evaluations)
-    lambda_range_for_ridge = np.linspace(pow(10, -5), pow(10, -2) * 5, n_evaluations)
+    # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso
+    # regressions
+    lambda_range_for_lasso = np.linspace(pow(10, -2), 3, n_evaluations)
+    lambda_range_for_ridge = np.linspace(pow(10, -5), pow(10, -2)*3, n_evaluations)
 
     train_errors_lasso = []
     val_errors_lasso = []
@@ -138,20 +132,20 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
     best_lasso_index = np.argmin(val_errors_lasso)
     best_lasso_lambda = lambda_range_for_lasso[best_lasso_index]
-    print("best lambda for lasso:", best_lasso_lambda)
+    print("Best Lambda Value for Lasso Regularization:", best_lasso_lambda)
     best_ridge_index = np.argmin(val_errors_ridge)
     best_ridge_lambda = lambda_range_for_ridge[best_ridge_index]
-    print("best lambda for ridge:", best_ridge_lambda)
+    print("Best Lambda Value for Ridge Regularization:", best_ridge_lambda)
     ridge = RidgeRegression(best_ridge_lambda)
     ridge.fit(train_X, train_y)
-    print("Ridge Loss:", ridge.loss(test_X, test_y))
+    print("Ridge Test Error:", ridge.loss(test_X, test_y))
     lasso = Lasso(best_lasso_lambda)
     lasso.fit(train_X, train_y)
     lasso_result = lasso.predict(test_X)
-    print("Lasso Loss:", mean_square_error(test_y, lasso_result))
+    print("Lasso Test Error:", mean_square_error(test_y, lasso_result))
     least_squares = LinearRegression()
     least_squares.fit(train_X, train_y)
-    print("Least Squares Loss:", least_squares.loss(test_X, test_y))
+    print("Least Squares Test Error:", least_squares.loss(test_X, test_y))
 
 
 if __name__ == '__main__':

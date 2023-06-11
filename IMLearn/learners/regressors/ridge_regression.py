@@ -4,7 +4,6 @@ from ...base import BaseEstimator
 import numpy as np
 
 
-
 class RidgeRegression(BaseEstimator):
     """
     Ridge Regression Estimator
@@ -33,7 +32,6 @@ class RidgeRegression(BaseEstimator):
             Coefficients vector fitted by linear regression. To be set in
             `LinearRegression.fit` function.
         """
-
 
         """
         Initialize a ridge regression model
@@ -64,7 +62,7 @@ class RidgeRegression(BaseEstimator):
             ones = np.ones((X.shape[0], 1))
             X = np.hstack([ones, X])
 
-        self.coefs_ = np.linalg.inv((X.T/len(X))@X+self.lam_*np.eye(X.shape[1]))@(X.T/len(X))@y
+        self.coefs_ = np.linalg.inv((X.T / len(X)) @ X + self.lam_ * np.eye(X.shape[1])) @ (X.T / len(X)) @ y
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -102,6 +100,6 @@ class RidgeRegression(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        from ...metrics import mean_square_error  # TODO is import ok?
+        from ...metrics import mean_square_error
         pred = self._predict(X)
         return mean_square_error(y, pred)

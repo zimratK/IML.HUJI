@@ -41,8 +41,8 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     train_scores = []
     val_scores = []
     permutation = np.random.permutation(len(X))
-    shuffled_X = X#[permutation]
-    shuffled_y = y#[permutation]
+    shuffled_X = X[permutation]
+    shuffled_y = y[permutation]
 
     for i in range(cv):
         fold_size = int(np.floor(shuffled_X.shape[0] / cv))
