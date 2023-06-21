@@ -39,6 +39,7 @@ class GradientDescent:
         Callable function receives as input any argument relevant for the current GD iteration. Arguments
         are specified in the `GradientDescent.fit` function
     """
+
     def __init__(self,
                  learning_rate: BaseLR = FixedLR(1e-3),
                  tol: float = 1e-5,
@@ -119,4 +120,35 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        raise NotImplementedError()
+        current_weights = f.weights_
+        saved_weights = current_weights
+        current_objective = f.compute_output(X=X, y=y)
+
+        for t in range(self.max_iter_):
+            subgradient = f.compute_jacobian(X=X, y=y)
+            lr = self.learning_rate_.lr_step()
+            new_weights = current_weights - lr * subgradient
+            f.weights= new_weights
+            new_objective = f.compute_output(X=X, y=y)
+            saved_weights = self._update_saved_weights(saved_weights, new_weights, t, current_objective,
+                                                       new_objective)
+            delta = np.linalg.norm(new_weights - current_weights)
+            self.callback_(solver=self, weights=f.weights, val=new_objective, grad=f.compute_jacobian(X=X, y=y),
+                           t=t, eta=lr, delta=delta)
+            current_weights = new_weights
+            if delta <= self.tol_:
+                break
+
+        f._weights = saved_weights
+        return f.compute_output(X=X, y=y)
+
+    def _update_saved_weights(self, saved_weights, new_weights, num_iter, current_objective, new_objective):
+        result = saved_weights
+        if self.out_type_ == OUTPUT_VECTOR_TYPE[0]:
+            result = new_weights
+        elif self.out_type_ == OUTPUT_VECTOR_TYPE[1]:
+            if current_objective > new_objective:
+                result = new_weights
+        elif self.out_type_ == OUTPUT_VECTOR_TYPE[2]:
+            result = ((saved_weights * num_iter) + new_weights) / (num_iter + 1)
+        return result

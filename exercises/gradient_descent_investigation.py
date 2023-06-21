@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from typing import Tuple, List, Callable, Type
@@ -46,12 +47,14 @@ def plot_descent_path(module: Type[BaseModule],
     fig = plot_descent_path(IMLearn.desent_methods.modules.L1, np.ndarray([[1,1],[0,0]]))
     fig.show()
     """
+
     def predict_(w):
         return np.array([module(weights=wi).compute_output() for wi in w])
 
     from utils import decision_surface
     return go.Figure([decision_surface(predict_, xrange=xrange, yrange=yrange, density=70, showscale=False),
-                      go.Scatter(x=descent_path[:, 0], y=descent_path[:, 1], mode="markers+lines", marker_color="black")],
+                      go.Scatter(x=descent_path[:, 0], y=descent_path[:, 1], mode="markers+lines",
+                                 marker_color="black")],
                      layout=go.Layout(xaxis=dict(range=xrange),
                                       yaxis=dict(range=yrange),
                                       title=f"GD Descent Path {title}"))
@@ -73,12 +76,43 @@ def get_gd_state_recorder_callback() -> Tuple[Callable[[], None], List[np.ndarra
     weights: List[np.ndarray]
         Recorded parameters
     """
-    raise NotImplementedError()
+    values_list = []
+    weights_list = []
+
+    def callback(solver, weights, val, grad, t, eta, delta):
+        values_list.append(val)
+        weights_list.append(weights)
+
+    return callback, values_list, weights_list
 
 
 def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                  etas: Tuple[float] = (1, .1, .01, .001)):
-    raise NotImplementedError()
+    modules = [L1(init), L2(init)]
+    for f in modules:
+        for lr in etas:
+            callback, values, weights = get_gd_state_recorder_callback()
+            solver = GradientDescent(FixedLR(lr), callback=callback)
+            solver.fit(f, None, None)
+            module_name = type(f).__name__.split(".")[-1]
+            plot = plot_descent_path(type(f), np.array(weights), f"for {module_name} with learning rate {lr}")
+            plot.write_image(f"../../Ex5/gd_path_{module_name}_{lr}.png")
+            # plt.show()
+            values = np.array(values).reshape((1,len(values)))[0]
+            fig = go.Figure(
+                go.Scatter(
+                    x=np.arange(len(values)),
+                    y=values,
+                    mode='lines+markers'
+                )
+            )
+            fig.update_layout(
+                title='Convergence Rate for Learning Rate ' + str(lr)+' and Module ' + module_name,
+                xaxis_title='Iteration',
+                yaxis_title='Norm'
+            )
+            fig.write_image(f"../../Ex5/convergence_rate_{module_name}_{lr}.png")
+            print(f"lowest loss for module {module_name} and learning rate {lr}:", min(values))
 
 
 def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
@@ -141,5 +175,5 @@ def fit_logistic_regression():
 if __name__ == '__main__':
     np.random.seed(0)
     compare_fixed_learning_rates()
-    compare_exponential_decay_rates()
-    fit_logistic_regression()
+    # compare_exponential_decay_rates()
+    # fit_logistic_regression()
