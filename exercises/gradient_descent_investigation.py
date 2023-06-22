@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from typing import Tuple, List, Callable, Type
-
+from sklearn import metrics
 from IMLearn import BaseModule
 from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
 from IMLearn.desent_methods.modules import L1, L2
@@ -88,9 +88,9 @@ def get_gd_state_recorder_callback() -> Tuple[Callable[[], None], List[np.ndarra
 
 def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                  etas: Tuple[float] = (1, .1, .01, .001)):
-    modules = [L1(init), L2(init)]
-    for f in modules:
-        for lr in etas:
+    for lr in etas:
+        modules = [L1(init), L2(init)]
+        for f in modules:
             callback, values, weights = get_gd_state_recorder_callback()
             solver = GradientDescent(FixedLR(lr), callback=callback)
             solver.fit(f, None, None)
@@ -163,9 +163,17 @@ def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8)
 def fit_logistic_regression():
     # Load and split SA Heard Disease dataset
     X_train, y_train, X_test, y_test = load_data()
+    model = LogisticRegression()
+    model.fit(X_train.to_numpy(), y_train.to_numpy())
+
 
     # Plotting convergence rate of logistic regression over SA heart disease data
-    raise NotImplementedError()
+    fig = go.Figure(layout=go.Layout(title="ROC Curve For Logistic Regression",
+                                     margin=dict(t=100)))
+
+    fpr, tpr, th = metrics.roc_curve(y_test, model.predict_proba(X_test.to_numpy()))
+    fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines'))
+    fig.show()
 
     # Fitting l1- and l2-regularized logistic regression models, using cross-validation to specify values
     # of regularization parameter
@@ -174,6 +182,6 @@ def fit_logistic_regression():
 
 if __name__ == '__main__':
     np.random.seed(0)
-    compare_fixed_learning_rates()
+    # compare_fixed_learning_rates()
     # compare_exponential_decay_rates()
-    # fit_logistic_regression()
+    fit_logistic_regression()

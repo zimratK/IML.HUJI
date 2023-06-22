@@ -120,6 +120,29 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
+        # current_weights = f.weights_
+        # saved_weights = current_weights
+        # current_objective = f.compute_output(X=X, y=y)
+        #
+        # for t in range(self.max_iter_):
+        #     print("t=", t)
+        #     subgradient = f.compute_jacobian(X=X, y=y)
+        #     lr = self.learning_rate_.lr_step()
+        #     new_weights = current_weights - lr * subgradient
+        #     f.weights = new_weights
+        #     new_objective = f.compute_output(X=X, y=y)
+        #     saved_weights = self._update_saved_weights(saved_weights, new_weights, t, current_objective,
+        #                                                new_objective)
+        #     delta = np.linalg.norm(new_weights - current_weights)
+        #     self.callback_(solver=self, weights=f.weights_, val=new_objective,
+        #                    grad=f.compute_jacobian(X=X, y=y),
+        #                    t=t, eta=lr, delta=delta)
+        #     current_weights = new_weights
+        #     if delta <= self.tol_:
+        #         break
+        #
+        # f.weights_ = saved_weights
+        # return f.compute_output(X=X, y=y)
         current_weights = f.weights_
         saved_weights = current_weights
         current_objective = f.compute_output(X=X, y=y)
@@ -128,12 +151,13 @@ class GradientDescent:
             subgradient = f.compute_jacobian(X=X, y=y)
             lr = self.learning_rate_.lr_step()
             new_weights = current_weights - lr * subgradient
-            f.weights= new_weights
+            f.weights = new_weights
             new_objective = f.compute_output(X=X, y=y)
             saved_weights = self._update_saved_weights(saved_weights, new_weights, t, current_objective,
                                                        new_objective)
             delta = np.linalg.norm(new_weights - current_weights)
-            self.callback_(solver=self, weights=f.weights, val=new_objective, grad=f.compute_jacobian(X=X, y=y),
+            self.callback_(solver=self, weights=f.weights, val=new_objective,
+                           grad=f.compute_jacobian(X=X, y=y),
                            t=t, eta=lr, delta=delta)
             current_weights = new_weights
             if delta <= self.tol_:
@@ -141,6 +165,7 @@ class GradientDescent:
 
         f._weights = saved_weights
         return f.compute_output(X=X, y=y)
+
 
     def _update_saved_weights(self, saved_weights, new_weights, num_iter, current_objective, new_objective):
         result = saved_weights
